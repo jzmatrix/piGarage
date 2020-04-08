@@ -1,0 +1,46 @@
+#!/usr/bin/python
+from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
+import RPi.GPIO as GPIO
+from time import sleep
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
+httpPort = 8080
+relayGPIO = 18
+GPIO.setup(relayGPIO,GPIO.OUT)
+################################################################################
+#This class will handles any incoming request from
+#the browser
+class myHandler(BaseHTTPRequestHandler):
+
+	#Handler for the GET requests
+	def do_GET(self):
+		self.send_response(200)
+		self.send_header('Content-type','text/html')
+		self.end_headers()
+		# Send the html message
+		# self.wfile.write("Hello World :: " + str(self.path))
+		if str(self.path) == '/open':
+			self.wfile.write("As you command")
+			GPIO.output(relayGPIO,GPIO.HIGH)
+			sleep(0.5)
+			GPIO.output(relayGPIO,GPIO.LOW)
+		else:
+			self.wfile.write("Huh?")
+		return
+################################################################################
+try:
+	GPIO.output(relayGPIO,GPIO.LOW)
+
+	#Create a web server and define the handler to manage the
+	#incoming request
+	server = HTTPServer(('', httpPort), myHandler)
+	print 'Started httpserver on port ' , httpPort
+
+	#Wait forever for incoming htto requests
+	server.serve_forever()
+
+except KeyboardInterrupt:
+	print '^C received, shutting down the web server'
+	server.socket.close()

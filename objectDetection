@@ -1,0 +1,160 @@
+#!/usr/bin/env python
+import RPi.GPIO as GPIO
+import time
+from time import sleep
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
+usTrigger = 17			# GPIO port for Ultrasonic module, trigger pin
+usEcho = 27				# GPIO port for Ultrasonic module, echo pin
+buzzer=23				# GPIO port for Buzzer trigger pin
+ledRed=19				# GPIO port for Red LED
+ledYellow=26			# GPIO port for Yellow LED
+ledGreen=21				# GPIO port for Green LED
+ledStatus = 6			# GPIO port for Status/Blue LED
+
+prevDistance = 0		# Placeholder for previous distance value
+prevTiming = 0 			# Time (in seconds) that the distance has remained constant(-ish)
+prevStart = time.time()	# Placeholder for previous distance start timer
+prevEnd = time.time()	# Placeholder for previous distance end timer
+
+activeMode = 1			# Init the active mode, 1 = LEDs and buzzer are active, 0 = LEDs and buzzer are off
+################################################################################
+def doSetup():
+	# Init PIN functions and set initial LED/Buzzer state
+	########
+	GPIO.setup(usTrigger,GPIO.OUT)
+	GPIO.setup(usEcho,GPIO.IN)
+	GPIO.setup(buzzer,GPIO.OUT)
+	GPIO.setup(ledRed,GPIO.OUT)
+	GPIO.setup(ledYellow,GPIO.OUT)
+	GPIO.setup(ledGreen,GPIO.OUT)
+	GPIO.setup(ledStatus,GPIO.OUT)
+	########
+	GPIO.output(ledStatus,GPIO.HIGH)
+	########
+	GPIO.output(ledRed,GPIO.LOW)
+	GPIO.output(ledYellow,GPIO.LOW)
+	GPIO.output(ledGreen,GPIO.LOW)
+	GPIO.output(buzzer,GPIO.LOW)
+	########
+	GPIO.output(usTrigger, False)
+	########
+	# "Waiting for Sensor to Settle"
+	time.sleep(2)
+################################################################################
+def previousTimer():
+	global distance, prevDistance
+	global prevTiming, prevStart, prevEnd, activeMode
+	#####
+	validDistanceDiff = 1  # If the distance measurement jumps by an extreme number, ignore it so timers don't reset
+	#####
+	distanceDiff = prevDistance - distance
+	if distanceDiff < 0:
+		distanceDiff = distanceDiff + -distanceDiff
+	#####
+	if distanceDiff > 12:
+		validDistanceDiff = 0
+		prevDistance = distance
+	#####
+	if validDistanceDiff:
+		activeMode = 1
+		if (prevDistance != distance) and (prevDistance != distance - 1) and (prevDistance != distance + 1):
+			prevDistance = distance
+			prevTiming = 0
+			prevStart = time.time()
+		else:
+			prevEnd = time.time()
+			prevTiming = round(prevEnd - prevStart)
+################################################################################
+def triggerDistance():
+	global distance, prevDistance
+	global prevTiming, prevStart, prevEnd, activeMode
+	#####
+	print "Distance :", distance, " :: PD:",prevDistance, " :: PT:",prevTiming, " :: AM=",activeMode
+	#####
+	previousTimer()
+	#####
+	# If the distance hasn't changed in over 10 seconds, turn off LEDs and Buzzer
+	if prevTiming > 10:
+		activeMode = 0
+	#####
+	if not activeMode:
+		GPIO.output(ledStatus,GPIO.LOW)
+		GPIO.output(buzzer,GPIO.LOW)
+		GPIO.output(ledRed,GPIO.LOW)
+		GPIO.output(ledYellow,GPIO.LOW)
+		GPIO.output(ledGreen,GPIO.LOW)
+	else:
+		GPIO.output(ledStatus,GPIO.HIGH)
+		if (distance < 12):
+			# All LEDS and BUZZER
+			#------------------------#
+			GPIO.output(ledRed,GPIO.HIGH)
+			GPIO.output(ledYellow,GPIO.HIGH)
+			GPIO.output(ledGreen,GPIO.HIGH)
+			GPIO.output(buzzer,GPIO.HIGH)
+		elif (distance < 24):
+			# RED LED no BUZZER
+			#------------------------#
+			#print "Distance (RED) :",distance,"in"
+			GPIO.output(ledRed,GPIO.HIGH)
+			GPIO.output(ledYellow,GPIO.LOW)
+			GPIO.output(ledGreen,GPIO.LOW)
+			GPIO.output(buzzer,GPIO.LOW)
+		elif (distance < 36):
+			# YELLOW LED no BUZZER
+			#------------------------#
+			#print "Distance (YELLOW) :",distance,"in"
+			GPIO.output(ledRed,GPIO.LOW)
+			GPIO.output(ledYellow,GPIO.HIGH)
+			GPIO.output(ledGreen,GPIO.LOW)
+			GPIO.output(buzzer,GPIO.LOW)
+		elif (distance < 48):
+			# GREEN LED no BUZZER
+			#------------------------#
+			#print "Distance (GREEN) :",distance,"in"
+			GPIO.output(ledRed,GPIO.LOW)
+			GPIO.output(ledYellow,GPIO.LOW)
+			GPIO.output(ledGreen,GPIO.HIGH)
+			GPIO.output(buzzer,GPIO.LOW)
+		else:
+			# no LED no BUZZER
+			#------------------------#
+			#print "Distance (All Good) :",distance,"in"
+			GPIO.output(buzzer,GPIO.LOW)
+			GPIO.output(ledRed,GPIO.LOW)
+			GPIO.output(ledYellow,GPIO.LOW)
+			GPIO.output(ledGreen,GPIO.LOW)
+
+################################################################################
+def doDetection():
+	global distance
+	##########
+	while True:
+		GPIO.output(usTrigger, True)
+		time.sleep(0.00001)
+		GPIO.output(usTrigger, False)
+
+		while GPIO.input(usEcho)==0:
+			pulse_start = time.time()
+		while GPIO.input(usEcho) == 1:
+			pulse_end = time.time()
+
+		pulse_duration = pulse_end - pulse_start # Time the reflection
+
+		distance = pulse_duration * 17150 # No idea where this comes from, copy/paste from documentation
+
+		distance = round(distance / 2.54) # Round and convert to inches
+
+		triggerDistance()
+		sleep(0.05)
+
+################################################################################
+if __name__ == '__main__':
+	doSetup()
+	try:
+		doDetection()
+	except KeyboardInterrupt:
+		GPIO.cleanup()

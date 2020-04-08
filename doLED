@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+import RPi.GPIO as GPIO
+from time import sleep
+
+#Disable warnings (optional)
+GPIO.setwarnings(False)
+
+#Select GPIO mode
+GPIO.setmode(GPIO.BCM)
+
+#Set buzzer - pin 23 as output
+red=19
+yellow=26
+green=21
+
+GPIO.setup(red,GPIO.OUT)
+GPIO.setup(yellow,GPIO.OUT)
+GPIO.setup(green,GPIO.OUT)
+
+GPIO.output(green,GPIO.LOW)
+
+#Run forever loop
+try:
+	while True:
+		GPIO.output(red,GPIO.HIGH)
+		sleep(0.5) # Delay in seconds
+		GPIO.output(red,GPIO.LOW)
+		GPIO.output(yellow,GPIO.HIGH)
+		sleep(0.5)
+		GPIO.output(yellow,GPIO.LOW)
+		GPIO.output(green,GPIO.HIGH)
+		sleep(0.5)
+		GPIO.output(green,GPIO.LOW)
+except KeyboardInterrupt:
+		GPIO.cleanup()
