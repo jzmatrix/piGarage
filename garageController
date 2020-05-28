@@ -1,0 +1,11 @@
+#!/usr/bin/perl
+################################################################################
+my $myPid = $$;
+my $curPid = `/bin/pidof -x -o $myPid garageController`; chomp $curPid;
+if ($curPid)
+{
+  print "Already Running\n";
+  exit;
+}
+################################################################################
+`/opt/piGarage/piGarage`;

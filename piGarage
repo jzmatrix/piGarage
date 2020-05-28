@@ -1,0 +1,457 @@
+#!/usr/bin/env python
+
+# import usb.core
+# import usb.util
+
+import os, sys
+import serial
+import time
+
+import os.path
+from os import path
+
+import math
+import unicornhat as unicorn
+from time import sleep
+from datetime import datetime
+################################################################################
+ser = serial.Serial('/dev/ttyACM0',9600,8,'N',1, timeout = 5)
+time.sleep(10)
+
+#r, w = os.pipe()
+#w = os.fdopen(w, 'w')
+################################################################################
+stopFlag = 0
+sensor1 = int(99)
+sensor2 = int(99)
+sensor3 = int(99)
+sensor1Mode = ""
+sensor2Mode = ""
+sensor3Mode = ""
+################################################################################
+def doSetup():
+	global height, width
+	unicorn.set_layout(unicorn.HAT)
+	unicorn.rotation(0)
+	unicorn.brightness(0.5)
+	width,height=unicorn.get_shape()
+
+
+	# print "Height: ", str(height), " :: ", str(width)
+################################################################################
+def centerGreenPosition(mode):
+	if (mode == 1):
+		r = 0
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(0,3,r,g,b)
+	unicorn.set_pixel(0,4,r,g,b)
+	unicorn.set_pixel(1,3,r,g,b)
+	unicorn.set_pixel(1,4,r,g,b)
+	unicorn.show()
+################################################################################
+def centerYellowPosition(mode):
+	if (mode == 1):
+		r = 255
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(2,3,r,g,b)
+	unicorn.set_pixel(2,4,r,g,b)
+	unicorn.set_pixel(3,3,r,g,b)
+	unicorn.set_pixel(3,4,r,g,b)
+	unicorn.show()
+################################################################################
+def centerRedPosition(mode):
+	if (mode == 1):
+		r = 255
+		g = 0
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(4,3,r,g,b)
+	unicorn.set_pixel(4,4,r,g,b)
+	unicorn.set_pixel(5,3,r,g,b)
+	unicorn.set_pixel(5,4,r,g,b)
+	unicorn.show()
+################################################################################
+def centerRedStopPosition(mode):
+	global stopFlag;
+	if (mode == 1):
+		if stopFlag == 0:
+			r = 205
+			g = 92
+			b = 92
+			stopFlag = 1
+		else:
+			r = 0
+			g = 0
+			b = 0
+			stopFlag = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(6,3,r,g,b)
+	unicorn.set_pixel(6,4,r,g,b)
+	unicorn.set_pixel(7,3,r,g,b)
+	unicorn.set_pixel(7,4,r,g,b)
+	if (mode == 1):
+		time.sleep(0.001)
+################################################################################
+def bottomGreenLeft(mode):
+	if (mode == 1):
+		r = 0
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(0,2,r,g,b)
+	unicorn.set_pixel(1,2,r,g,b)
+	unicorn.set_pixel(2,2,r,g,b)
+	unicorn.set_pixel(3,2,r,g,b)
+################################################################################
+def topGreenLeft(mode):
+	if (mode == 1):
+		r = 0
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(4,2,r,g,b)
+	unicorn.set_pixel(5,2,r,g,b)
+	unicorn.set_pixel(6,2,r,g,b)
+	unicorn.set_pixel(7,2,r,g,b)
+################################################################################
+def bottomYellowLeft(mode):
+	if (mode == 1):
+		r = 255
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(0,1,r,g,b)
+	unicorn.set_pixel(1,1,r,g,b)
+	unicorn.set_pixel(2,1,r,g,b)
+	unicorn.set_pixel(3,1,r,g,b)
+################################################################################
+def topYellowLeft(mode):
+	if (mode == 1):
+		r = 255
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(4,1,r,g,b)
+	unicorn.set_pixel(5,1,r,g,b)
+	unicorn.set_pixel(6,1,r,g,b)
+	unicorn.set_pixel(7,1,r,g,b)
+################################################################################
+def bottomRedLeft(mode):
+	if mode == 1:
+		r = 255
+		g = 0
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(0,0,r,g,b)
+	unicorn.set_pixel(1,0,r,g,b)
+	unicorn.set_pixel(2,0,r,g,b)
+	unicorn.set_pixel(3,0,r,g,b)
+################################################################################
+def topRedLeft(mode):
+	if (mode == 1):
+		r = 255
+		g = 0
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(4,0,r,g,b)
+	unicorn.set_pixel(5,0,r,g,b)
+	unicorn.set_pixel(6,0,r,g,b)
+	unicorn.set_pixel(7,0,r,g,b)
+################################################################################
+def bottomGreenRight(mode):
+	if (mode == 1):
+		r = 0
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(0,5,r,g,b)
+	unicorn.set_pixel(1,5,r,g,b)
+	unicorn.set_pixel(2,5,r,g,b)
+	unicorn.set_pixel(3,5,r,g,b)
+################################################################################
+def topGreenRight(mode):
+	if (mode == 1):
+		r = 0
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(4,5,r,g,b)
+	unicorn.set_pixel(5,5,r,g,b)
+	unicorn.set_pixel(6,5,r,g,b)
+	unicorn.set_pixel(7,5,r,g,b)
+################################################################################
+def bottomYellowRight(mode):
+	if (mode == 1):
+		r = 255
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(0,6,r,g,b)
+	unicorn.set_pixel(1,6,r,g,b)
+	unicorn.set_pixel(2,6,r,g,b)
+	unicorn.set_pixel(3,6,r,g,b)
+################################################################################
+def topYellowRight(mode):
+	if (mode == 1):
+		r = 255
+		g = 255
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(4,6,r,g,b)
+	unicorn.set_pixel(5,6,r,g,b)
+	unicorn.set_pixel(6,6,r,g,b)
+	unicorn.set_pixel(7,6,r,g,b)
+################################################################################
+def bottomRedRight(mode):
+	if (mode == 1):
+		r = 255
+		g = 0
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(0,7,r,g,b)
+	unicorn.set_pixel(1,7,r,g,b)
+	unicorn.set_pixel(2,7,r,g,b)
+	unicorn.set_pixel(3,7,r,g,b)
+################################################################################
+def topRedRight(mode):
+	if (mode == 1):
+		r = 255
+		g = 0
+		b = 0
+	else:
+		r = 0
+		g = 0
+		b = 0
+	unicorn.set_pixel(4,7,r,g,b)
+	unicorn.set_pixel(5,7,r,g,b)
+	unicorn.set_pixel(6,7,r,g,b)
+	unicorn.set_pixel(7,7,r,g,b)
+################################################################################
+def getMeasurements():
+	global sensor1, sensor2, sensor3
+	try:
+		line = ser.readline().strip()
+		if len(line) == 0:
+			print("Time out! Exit.\n")
+			return
+		distances = line.split(",",2)
+		sensor1 = int(distances[0])
+		sensor2 = int(distances[1])
+		sensor3 = int(distances[2])
+	except Exception as e:
+		print "An exception occurred (getMeasurements) :: " ,str(e)
+		print "Distances: " + str(distances)
+		sleep(1)
+################################################################################
+def sensor1Actions(sensor1):
+	global sensor1Mode
+	if ((sensor1 >= 21) and (sensor1 <= 23)):
+		# Perfect
+		sensor1Mode = "Perfect"
+		bottomRedLeft(0)
+		bottomRedRight(0)
+		bottomYellowLeft(0)
+		bottomYellowRight(0)
+		bottomGreenLeft(1)
+		bottomGreenRight(1)
+	elif (sensor1 < 17):
+		# Need to move Right (LEFT RED)
+		sensor1Mode = "LEFT RED"
+		bottomRedLeft(1)
+		bottomRedRight(0)
+		bottomYellowLeft(0)
+		bottomYellowRight(0)
+		bottomGreenLeft(0)
+		bottomGreenRight(0)
+	elif ((sensor1 >= 17) and (sensor1 <= 20)):
+		# Need to move Right (LEFT YELLOW)
+		sensor1Mode = "LEFT YELLOW"
+		bottomRedLeft(0)
+		bottomRedRight(0)
+		bottomYellowLeft(1)
+		bottomYellowRight(0)
+		bottomGreenLeft(0)
+		bottomGreenRight(0)
+	elif ((sensor1 > 24) and (sensor1 <= 25)):
+		# Need to move LEFT (RIGHT YELLOW)
+		sensor1Mode = "RIGHT YELLOW"
+		bottomRedLeft(0)
+		bottomRedRight(0)
+		bottomYellowLeft(0)
+		bottomYellowRight(1)
+		bottomGreenLeft(0)
+		bottomGreenRight(0)
+	elif (sensor1 > 25):
+		# Need to move LEFT (RIGHT RED)
+		sensor1Mode = "RIGHT RED"
+		bottomRedLeft(0)
+		bottomRedRight(1)
+		bottomYellowLeft(0)
+		bottomYellowRight(0)
+		bottomGreenLeft(0)
+		bottomGreenRight(0)
+################################################################################
+def sensor2Actions(sensor2):
+	global sensor2Mode
+	if ((sensor2 >= 21) and (sensor2 <= 23)):
+		# Perfect
+		sensor2Mode = "Perfect"
+		topRedLeft(0)
+		topRedRight(0)
+		topYellowLeft(0)
+		topYellowRight(0)
+		topGreenLeft(1)
+		topGreenRight(1)
+	elif (sensor2 < 17):
+		# Need to move Right (LEFT RED)
+		sensor2Mode = "LEFT RED"
+		topRedLeft(1)
+		topRedRight(0)
+		topYellowLeft(0)
+		topYellowRight(0)
+		topGreenLeft(0)
+		topGreenRight(0)
+	elif ((sensor2 >= 17) and (sensor2 <= 20)):
+		# Need to move Right (LEFT YELLOW)
+		sensor2Mode = "LEFT YELLOW"
+		topRedLeft(0)
+		topRedRight(0)
+		topYellowLeft(1)
+		topYellowRight(0)
+		topGreenLeft(0)
+		topGreenRight(0)
+	elif ((sensor2 > 24) and (sensor2 <= 25)):
+		# Need to move LEFT (RIGHT YELLOW)
+		sensor2Mode = "RIGHT YELLOW"
+		topRedLeft(0)
+		topRedRight(0)
+		topYellowLeft(0)
+		topYellowRight(1)
+		topGreenLeft(0)
+		topGreenRight(0)
+	elif (sensor2 > 25):
+		# Need to move LEFT (RIGHT RED)
+		sensor2Mode = "RIGHT RED"
+		topRedLeft(0)
+		topRedRight(1)
+		topYellowLeft(0)
+		topYellowRight(0)
+		topGreenLeft(0)
+		topGreenRight(0)
+################################################################################
+def sensor3Actions(sensor3):
+	global sensor3Mode
+	if (sensor3 < 16):
+		# All LEDS and STOP
+		sensor3Mode = "ALL LEDs AND STOP"
+		centerGreenPosition(1)
+		centerYellowPosition(1)
+		centerRedPosition(1)
+		centerRedStopPosition(1)
+	elif (sensor3 < 24):
+		# All LEDs no STOP
+		sensor3Mode = "ALL LEDs NO STOP"
+		centerGreenPosition(1)
+		centerYellowPosition(1)
+		centerRedPosition(1)
+		centerRedStopPosition(0)
+	elif (sensor3 < 36):
+		# Green and Yellow LED
+		sensor3Mode = "GREEN & YELLOW"
+		centerGreenPosition(1)
+		centerYellowPosition(1)
+		centerRedPosition(0)
+		centerRedStopPosition(0)
+	elif (sensor3 < 60):
+		# Green LED
+		sensor3Mode = "GREEN"
+		centerGreenPosition(1)
+		centerYellowPosition(0)
+		centerRedPosition(0)
+		centerRedStopPosition(0)
+	elif (sensor3 > 60):
+		# NO LEDs
+		sensor3Mode = "NONE"
+		centerGreenPosition(0)
+		centerYellowPosition(0)
+		centerRedPosition(0)
+		centerRedStopPosition(0)
+################################################################################
+if __name__ == '__main__':
+	try:
+		doSetup()
+		time.sleep(0.05)
+		#####
+		filePath = "/tmp/piGarage.log"
+		f = open(filePath, "a")
+		#####
+		while True:
+			getMeasurements()
+			#######
+			dateTimeObj = datetime.now()
+			#######
+			logString = str(dateTimeObj) + " :: " + str(sensor1) + " (" + sensor1Mode + ")" + " :: " + str(sensor2) + " (" + sensor2Mode +") :: " + str(sensor3) + " (" + sensor3Mode +")\n"
+			# f.write(logString)
+			print (logString)
+			######
+			sensor1Actions(sensor1) # Rear Side
+			sensor2Actions(sensor2) # Front Side
+			sensor3Actions(sensor3) # Front Distance
+			######
+			unicorn.show()
+			######
+			# time.sleep(0.01)
+
+	except Exception as e:
+		f.close()
+		print "An exception occurred (main) :: " ,str(e)
+		sleep(1)
