@@ -293,10 +293,11 @@ def getMeasurements():
 		if len(line) == 0:
 			print("Time out! Exit.\n")
 			exit
-		distances = line.split(",",2)
+		distances = line.split(",",3)
 		sensor1 = int(distances[0])
 		sensor2 = int(distances[1])
 		sensor3 = int(distances[2])
+		arduinoTime = int(distances[3])
 	except Exception as e:
 		print "An exception occurred (getMeasurements) :: " ,str(e)
 		print "Distances: " + str(distances)
@@ -454,18 +455,17 @@ if __name__ == '__main__':
 		doSetup()
 		time.sleep(0.05)
 		#####
-		# fileDate = datetime.today().strftime("%Y%m%d")
-		#####
 		while True:
 			for line in Pygtail("/tmp/sensorData",read_from_end=True,full_lines=True):
 				line = re.sub('-','', line.strip())
-				distances = line.split(",",2)
+				distances = line.split(",",3)
 				try:
 					diffCount = 0
 					#######
 					sensor1 = int(distances[0])
 					sensor2 = int(distances[1])
 					sensor3 = int(distances[2])
+					arduinoTime = int(distances[3])
 					#######
 					sensor1Diff = abs(lastSensor1 - sensor1)
 					sensor2Diff = abs(lastSensor2 - sensor2)
@@ -477,6 +477,10 @@ if __name__ == '__main__':
 						diffCount = diffCount + 1
 					if (sensor3Diff > 1):
 						diffCount = diffCount + 1
+					#######
+					f = open("/tmp/sensorHandled", "a")
+					f.write("SENSORS :: " + str(distances) + " :: " + str(sensor1) + " (" + sensor1Mode + ") :: " + str(sensor2) + " (" + sensor2Mode + ") :: " + str(sensor3) + " (" + sensor3Mode + ") :: " + str(arduinoTime) + "\n")
+					f.close()
 					#######
 					if progArg == "debug":
 						# print "SENSOR 1 :: " + str(sensor1) + " :: " + str(sensor1Diff)

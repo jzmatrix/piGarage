@@ -1,4 +1,4 @@
-unsigned long time;
+unsigned long curTime;
 // ============================================================= //
 // GPIO Pin Assignments
 const int sensor1Trig = 48;
@@ -71,7 +71,8 @@ void loop()
   sensor2Distance = readDistance(sensor2Trig,sensor2Echo);
   sensor3Distance = readDistance(sensor3Trig,sensor3Echo);
   //
-  Serial.println((String)sensor1Distance + "," + sensor2Distance + "," + sensor3Distance);
+  curTime = millis();
+  Serial.println((String)sensor1Distance + "," + sensor2Distance + "," + sensor3Distance + "," + curTime);
 
   delay(250);
 }
