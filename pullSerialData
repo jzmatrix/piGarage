@@ -1,0 +1,11 @@
+#!/usr/bin/perl
+################################################################################
+my $myPid = $$;
+my $curPid = `/bin/pidof -s -x -o $myPid pullSerialData`; chomp $curPid;
+if ($curPid)
+{
+  print "Already Running :: $curPid\n";
+  exit;
+}
+################################################################################
+`/usr/bin/grabserial -b 9600 -d /dev/ttyACM0 -o /tmp/sensorData -Q`;

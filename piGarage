@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-# import usb.core
-# import usb.util
+from pygtail import Pygtail
 
 import os, sys
 import serial
+import re
 import time
 
 import os.path
@@ -15,12 +15,19 @@ import unicornhat as unicorn
 from time import sleep
 from datetime import datetime
 ################################################################################
-ser = serial.Serial('/dev/ttyACM0',9600,8,'N',1, timeout = 5)
-time.sleep(10)
-
-#r, w = os.pipe()
-#w = os.fdopen(w, 'w')
+sysLen = len(sys.argv)
+if sysLen > 1:
+	progArg = sys.argv[1]
+else:
+	progArg = ""
+print "progArg :: " + progArg
 ################################################################################
+# ser = serial.Serial('/dev/ttyACM0',9600,8,'N',1, timeout = .5)
+################################################################################
+# time.sleep(10)
+################################################################################
+activeMode = 1
+diffCount = 0
 stopFlag = 0
 sensor1 = int(99)
 sensor2 = int(99)
@@ -28,6 +35,12 @@ sensor3 = int(99)
 sensor1Mode = ""
 sensor2Mode = ""
 sensor3Mode = ""
+sensor1Diff = 100
+sensor2Diff = 100
+sensor3Diff = 100
+lastSensor1 = 100
+lastSensor2 = 100
+lastSensor3 = 100
 ################################################################################
 def doSetup():
 	global height, width
@@ -35,9 +48,6 @@ def doSetup():
 	unicorn.rotation(0)
 	unicorn.brightness(0.5)
 	width,height=unicorn.get_shape()
-
-
-	# print "Height: ", str(height), " :: ", str(width)
 ################################################################################
 def centerGreenPosition(mode):
 	if (mode == 1):
@@ -282,7 +292,7 @@ def getMeasurements():
 		line = ser.readline().strip()
 		if len(line) == 0:
 			print("Time out! Exit.\n")
-			return
+			exit
 		distances = line.split(",",2)
 		sensor1 = int(distances[0])
 		sensor2 = int(distances[1])
@@ -290,7 +300,7 @@ def getMeasurements():
 	except Exception as e:
 		print "An exception occurred (getMeasurements) :: " ,str(e)
 		print "Distances: " + str(distances)
-		sleep(1)
+		exit
 ################################################################################
 def sensor1Actions(sensor1):
 	global sensor1Mode
@@ -426,32 +436,70 @@ def sensor3Actions(sensor3):
 		centerRedPosition(0)
 		centerRedStopPosition(0)
 ################################################################################
+#def activeModeToggle():
+#	global diffCount
+#	#####
+#	if diffCount < 2:
+#		activeMode = 1
+#		if (prevDistance != frontDistance) and (prevDistance != frontDistance - 1) and (prevDistance != frontDistance + 1):
+#			prevDistance = frontDistance
+#			prevTiming = 0
+#			prevStart = time.time()
+#		else:
+#			prevEnd = time.time()
+#			prevTiming = round(prevEnd - prevStart)
+################################################################################
 if __name__ == '__main__':
 	try:
 		doSetup()
 		time.sleep(0.05)
 		#####
-		filePath = "/tmp/piGarage.log"
-		f = open(filePath, "a")
+		# fileDate = datetime.today().strftime("%Y%m%d")
 		#####
 		while True:
-			getMeasurements()
-			#######
-			dateTimeObj = datetime.now()
-			#######
-			logString = str(dateTimeObj) + " :: " + str(sensor1) + " (" + sensor1Mode + ")" + " :: " + str(sensor2) + " (" + sensor2Mode +") :: " + str(sensor3) + " (" + sensor3Mode +")\n"
-			# f.write(logString)
-			print (logString)
-			######
-			sensor1Actions(sensor1) # Rear Side
-			sensor2Actions(sensor2) # Front Side
-			sensor3Actions(sensor3) # Front Distance
-			######
-			unicorn.show()
-			######
-			# time.sleep(0.01)
+			for line in Pygtail("/tmp/sensorData",read_from_end=True,full_lines=True):
+				line = re.sub('-','', line.strip())
+				distances = line.split(",",2)
+				try:
+					diffCount = 0
+					#######
+					sensor1 = int(distances[0])
+					sensor2 = int(distances[1])
+					sensor3 = int(distances[2])
+					#######
+					sensor1Diff = abs(lastSensor1 - sensor1)
+					sensor2Diff = abs(lastSensor2 - sensor2)
+					sensor3Diff = abs(lastSensor3 - sensor3)
+					#######
+					if (sensor1Diff > 1):
+						diffCount = diffCount + 1
+					if (sensor2Diff > 1):
+						diffCount = diffCount + 1
+					if (sensor3Diff > 1):
+						diffCount = diffCount + 1
+					#######
+					if progArg == "debug":
+						# print "SENSOR 1 :: " + str(sensor1) + " :: " + str(sensor1Diff)
+						# print "SENSOR 2 :: " + str(sensor2) + " :: " + str(sensor2Diff)
+						# print "SENSOR 3 :: " + str(sensor3) + " :: " + str(sensor3Diff)
+						# print "diffCount :: " + str(diffCount) + " :: activeMode :" + str(activeMode)
+						print "SENSORS :: " + str(distances) + " :: " + str(sensor1) + " (" + str(sensor1Diff) + ") :: " + str(sensor2) + " (" + str(sensor2Diff) + ") :: " + str(sensor3) + " (" + str(sensor3Diff) + ") :: diffCount :: " + str(diffCount)
+					#######
+					lastSensor1 = sensor1
+					lastSensor2 = sensor2
+					lastSensor3 = sensor3
+					#######
+					sensor1Actions(sensor1) # Rear Side
+					sensor2Actions(sensor2) # Front Side
+					sensor3Actions(sensor3) # Front Distance
+					######
+					unicorn.show()
+				except Exception as e:
+					print "An exception occurred (main 2) :: " ,str(e)
+					print "LINE :: " + str(distances)
+					sleep(0.01)
+			time.sleep(0.02)
 
 	except Exception as e:
-		f.close()
 		print "An exception occurred (main) :: " ,str(e)
 		sleep(1)
